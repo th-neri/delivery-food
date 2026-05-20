@@ -1,10 +1,12 @@
 import sqlite3
 import bcrypt
 
-connection = sqlite3.connect("delivery_food.db")
+def connect():
+    return sqlite3.connect("delivery_food.db")
 
-with connection:
-    connection.execute("""
+def create_tables(connection):
+    with connection:
+        connection.execute("""
                 CREATE TABLE IF NOT EXISTS users(
                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                        name TEXT NOT NULL,
@@ -14,7 +16,7 @@ with connection:
                     )
                     """)
     
-    connection.execute("""
+        connection.execute("""
                 CREATE TABLE IF NOT EXISTS restaurants(
                        id INTEGER PRIMARY KEY NOT NULL,
                        name TEXT NOT NULL,
@@ -22,7 +24,7 @@ with connection:
                     )
                     """)
     
-    connection.execute("""
+        connection.execute("""
                 CREATE TABLE IF NOT EXISTS cart(
                        user_id INTEGER,
                        restaurant_id INTEGER,
@@ -33,7 +35,7 @@ with connection:
                     )
                     """)
     
-    connection.execute("""
+        connection.execute("""
                 CREATE TABLE IF NOT EXISTS orders(
                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                        user_id INTEGER,
@@ -46,7 +48,7 @@ with connection:
     
 #-----USER FUNCTIONS-----
 def hash_password(password):
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('uft-8')
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
 
 def add_user(connection, name, email, password):
     hashed = hash_password(password)
