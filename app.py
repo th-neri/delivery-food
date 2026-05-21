@@ -45,7 +45,7 @@ def menu():
                     is_admin = user[3] == "admin"
                     print(f'\nYou are logged in {name}, welcome to our app!')
                 else:
-                    print("Wrong email or password, try again or create your own account.")
+                    print("\nWrong email or password, try again or create your own account.")
             elif choice == "3":
                 print("\nHave a good day!\n")
                 break
@@ -72,7 +72,7 @@ def menu():
                     print("1- Change user name")
                     print("2- Change password")
                     print("3- Delete your account")
-                    print("4- Go back")
+                    print("4- Go back to the main page")
 
                     choice = input("Enter your choice here: ")
 
@@ -94,13 +94,58 @@ def menu():
                                     database.change_username(connection, current_user, name)   
                                     print(f'\nYou changed your username, {name}!')     
                                 else:
-                                    print("\nIncorrect password. Try again.")     
+                                    print("\nIncorrect password. Try again.")  
+                            else:
+                                print("\nInvalid input. You have to use (Y) for yes or (N) for no.")   
                         else:
                             print("\nUser not found.\n")
                     elif choice == "2":
-                        pass
+                        new_password = input("Write your new password: ")
+                        password = input("Write your current password: ")
+                        
+                        result = database.get_user_password(connection, current_user)
+
+                        if result:
+                            stored_password = result[0]
+
+                            confirm = input("Are you sure you want to change the password of your account? (Y/N): ").strip().lower()
+
+                            if confirm == "n":
+                                print("\nCancelled")
+                            elif confirm == "y":
+                                if bcrypt.checkpw(password.encode(), stored_password.encode()):
+                                    database.change_password(connection, current_user, new_password)
+                                    print("\nYou changed your password!")
+                                else:
+                                    print("\nIncorrect password. Try again.")
+                            else:
+                                print("\nInvalid input. You have to use (Y) for yes or (N) for no.")
+                        else:
+                            print("\nUser not found.\n")
                     elif choice == "3":
-                        pass
+                        password = input("Write your password: ")
+
+                        result = database.get_user_password(connection, current_user)
+
+                        if result:
+                            stored_password = result[0]
+
+                            confirm = input("Before we proceed with the process we need to know if you are sure you want to delete your account (Y/N): ").strip().lower()
+
+                            if confirm == "n":
+                                print("\nCancelled.")
+                            elif confirm == "y":
+                                if bcrypt.checkpw(password.encode(), stored_password.encode()):
+                                    database.delete_account_by_id(connection, current_user)
+                                    current_user = None
+                                    print("\nYour account has been deleted successfully!")
+                                    break
+                                else:
+                                    print("\nIncorrect password. Try again.")
+                            else:
+                                print("\nInvalid input. You have to use (Y) for yes or (N) for no.")
+                        else:
+                            print("\nUser not found.\n")
                     elif choice == "4":
                         break
             elif choice == "4":
