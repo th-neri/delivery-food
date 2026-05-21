@@ -64,6 +64,23 @@ def menu():
 
             if choice == "1":
                 print("\n---MENU---")
+
+                restaurants = database.get_menu(connection)
+
+                for restaurant in restaurants:
+                    restaurant_id = restaurant[0]
+                    restaurant_name = restaurant[1]
+
+                    print(f'{restaurant_name}')
+                    print("-" * len(restaurant_name))
+
+                    dishes = database.get_item_by_restaurant(connection, id)
+
+                    for dish in dishes:
+                        name = dish[0]
+                        price = dish[1]
+
+                        print(f'{name} | ${price}')
             elif choice == "2":
                 pass
             elif choice == "3":

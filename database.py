@@ -106,3 +106,8 @@ def get_menu(connection):
     with connection:
         return connection.execute("SELECT * FROM restaurants").fetchall()
     
+def get_item_by_restaurant(connection, id):
+    with connection:
+        connection.execute("""
+                        SELECT name, price FROM restaurants WHERE id=?""", (id,)).fetchall()
+    
