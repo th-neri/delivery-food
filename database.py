@@ -2,7 +2,9 @@ import sqlite3
 import bcrypt
 
 def connect():
-    return sqlite3.connect("delivery_food.db")
+    connection = sqlite3.connect("delivery_food.db")
+    connection.execute("PRAGMA foreign_keys = ON")
+    return connection
 
 def create_tables(connection):
     with connection:
@@ -18,22 +20,31 @@ def create_tables(connection):
     
         connection.execute("""
                 CREATE TABLE IF NOT EXISTS restaurants(
-                        id INTEGER PRIMARY KEY NOT NULL,
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                         restaurant_name TEXT NOT NULL,
-                        item_name TEXT NOT NULL,
-                        price REAL NOT NULL, 
                         location TEXT NOT NULL
+                    )
+                    """)
+        
+        connection.execute("""
+                CREATE TABLE IF NOT EXISTS dishes(
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        restaurant_id INTEGER NOT NULL,
+                        dish_name TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        price REAL NOT NULL,
+                        FOREIGN KEY(restaurant_id) REFERENCES restaurants(id)
                     )
                     """)
     
         connection.execute("""
                 CREATE TABLE IF NOT EXISTS cart(
                         user_id INTEGER,
-                        restaurant_id INTEGER,
+                        dish_id INTEGER,
                         quantity INTEGER, 
-                        PRIMARY KEY(user_id, restaurant_id),
+                        PRIMARY KEY(user_id, dish_id),
                         FOREIGN KEY(user_id) REFERENCES users(id),
-                        FOREIGN KEY(restaurant_id) REFERENCES restaurants(id)
+                        FOREIGN KEY(dish_id) REFERENCES dishes(id)
                     )
                     """)
     
@@ -47,6 +58,18 @@ def create_tables(connection):
                         FOREIGN KEY(restaurant_id) REFERENCES restaurants(id)
                     )
                     """)
+        
+        connection.execute("""
+                CREATE TABLE IF NOT EXISTS order_items(
+                        order_id INTEGER,
+                        dish_id INTEGER,
+                        quantity INTEGER,
+                        price REAL,
+                        FOREIGN KEY(order_id) REFERENCES orders(id),
+                        FOREIGN KEY(dish_id) REFERENCES dishes(id)
+                    )
+                    """)
+
     
 #-----USER FUNCTIONS-----
 def hash_password(password):
@@ -94,20 +117,37 @@ def delete_account_by_id(connection, id):
         connection.execute("DELETE FROM users WHERE id=?", (id,))
 
 
-
-def add_restaurant(connection, id, restaurant_name, item_name, price, location):
+#-----RESTAURANT FUNCTIONS-----
+def add_restaurant(connection, restaurant_name, location):
     with connection:
         connection.execute("""
-                        INSERT INTO restaurants(id, restaurant_name, item_name, price, location)
-                        VALUES(?, ?, ?, ?, ?); """, (id, restaurant_name, item_name, price, location)
+                        INSERT INTO restaurants(restaurant_name, location)
+                        VALUES(?, ?); """, (restaurant_name, location)
+                        )
+        
+def delete_restaurant(connection, id):
+    with connection:
+        connection.execute("DELETE FROM restaurants WHERE id=?", (id,))
+        
+def add_dish(connection, restaurant_id, dish_name, type, price):
+    with connection:
+        connection.execute("""
+                        INSERT INTO dishes(restaurant_id, dish_name, type, price)
+                        VALUES(?, ?, ?, ?); """, (restaurant_id, dish_name, type, price)
                         )
         
 def get_menu(connection):
     with connection:
-        return connection.execute("SELECT * FROM restaurants").fetchall()
+        return connection.execute("SELECT id, restaurant_name FROM restaurants").fetchall()
     
-def get_item_by_restaurant(connection, id):
+def get_dish_by_restaurant(connection, restaurant_id):
     with connection:
-        connection.execute("""
-                        SELECT name, price FROM restaurants WHERE id=?""", (id,)).fetchall()
+        return connection.execute("""
+                        SELECT id, dish_name, type, price FROM dishes WHERE restaurant_id=?""", (restaurant_id,)).fetchall()
     
+def delete_dish(connection, id):
+    with connection:
+        return connection.execute("DELETE FROM dishes WHERE id=?", (id,))
+    
+
+#-----CART FUNCTIONS-----

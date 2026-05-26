@@ -4,13 +4,13 @@ import bcrypt
 def menu():
     connection = database.connect()
     database.create_tables(connection)
-
     current_user = None
     is_admin = False
 
     while True:
         if current_user is None:
-            print("\n---OPTIONS---")
+            print("\n     OPTIONS   ")
+            print("-----------------")
             print("1- Create your account")
             print("2- Sign in")
             print("3- Exit")
@@ -53,7 +53,8 @@ def menu():
                 print("\nInvalid choice. Pick a valid number.")
 
         else:
-            print("\n---OPTIONS---")
+            print("\n     OPTIONS   ")
+            print("-----------------")
             print("1- Show menu")
             print("2- Buy here")
             print("3- Account settings")
@@ -71,21 +72,27 @@ def menu():
                     restaurant_id = restaurant[0]
                     restaurant_name = restaurant[1]
 
-                    print(f'{restaurant_name}')
+                    print(f'{restaurant_id}')
                     print("-" * len(restaurant_name))
 
                     dishes = database.get_item_by_restaurant(connection, id)
 
-                    for dish in dishes:
-                        name = dish[0]
-                        price = dish[1]
+                    if not dishes:
+                        print("No dishes available.")
 
-                        print(f'{name} | ${price}')
+                    for dish in dishes:
+                        dish_id = dish[0]
+                        name = dish[1]
+                        type = dish[2]
+                        price = dish[3]
+
+                        print(f'ID_NUMBER: {dish_id} | {name} | {type} | ${price}')
             elif choice == "2":
                 pass
             elif choice == "3":
                 while True:
-                    print("\n---SETTINGS---")
+                    print("\n     SETTINGS   ")
+                    print("------------------")
                     print("1- Change user name")
                     print("2- Change password")
                     print("3- Delete your account")
@@ -171,7 +178,42 @@ def menu():
                 is_admin = False
                 continue
             elif choice == "5":
-                pass
+                while True:
+                    print("\n   ADM OPTIONS   ")
+                    print("-----------------")
+                    print("1- Add Restaurant")
+                    print("2- Remove restaurant from the app")
+                    print("2- Add a dish")
+                    print("3- Remove dish from the app")
+                    print("4- Statistics")
+                    print("5- Go back to the main page")
+
+                    choice = input("Enter your choice here: ")  
+
+                    if choice == "1":
+                        restaurant_name = input("Write the restaurant name: ")               
+                        location = input("Restaurant location: ")   
+
+                        if not restaurant_name or not location:
+                            print("\nYou have to fill all the fields.\n")  
+                            continue
+
+                        database.add_restaurant(connection, restaurant_name, location)   
+                        print("\nRestaurant added succesfully!")  
+
+                    elif choice == "2":     
+                        id = input("Enter the restaurant ID number: ").strip()
+
+                        confirm = input("Are you sure you want to change the password of your account? (Y/N): ").strip().lower()
+
+                        if confirm == "n":
+                            print("\nCancelled.")
+                            continue
+                        elif confirm == "y":
+                            database.delete_restaurant(connection, id)
+                            print("\nRestaurant removed successfully!")
+                        else:
+                            print("\nInvalid input. You have to use (Y) for yes or (N) for no.")   
             else:
                 print("\nInvalid choice, Pick a valid number.")
 
