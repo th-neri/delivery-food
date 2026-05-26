@@ -7,6 +7,8 @@ def menu():
     current_user = None
     is_admin = False
 
+    database.make_admin(connection, "neri123@gmail.com")
+
     while True:
         if current_user is None:
             print("\n     OPTIONS   ")
@@ -64,7 +66,7 @@ def menu():
             choice = input("Enter your choice here: ")
 
             if choice == "1":
-                print("\n---MENU---")
+                print("\n   MENU   ")
 
                 restaurants = database.get_menu(connection)
 
@@ -72,10 +74,10 @@ def menu():
                     restaurant_id = restaurant[0]
                     restaurant_name = restaurant[1]
 
-                    print(f'{restaurant_id}')
+                    print(f'{restaurant_name}')
                     print("-" * len(restaurant_name))
 
-                    dishes = database.get_item_by_restaurant(connection, id)
+                    dishes = database.get_dish_by_restaurant(connection, restaurant_id)
 
                     if not dishes:
                         print("No dishes available.")
@@ -86,7 +88,7 @@ def menu():
                         type = dish[2]
                         price = dish[3]
 
-                        print(f'ID_NUMBER: {dish_id} | {name} | {type} | ${price}')
+                        print(f'ID NUMBER: {dish_id} | {name} | {type} | ${price}')
             elif choice == "2":
                 pass
             elif choice == "3":
@@ -123,6 +125,7 @@ def menu():
                                 print("\nInvalid input. You have to use (Y) for yes or (N) for no.")   
                         else:
                             print("\nUser not found.\n")
+
                     elif choice == "2":
                         new_password = input("Write your new password: ")
                         password = input("Write your current password: ")
@@ -146,6 +149,7 @@ def menu():
                                 print("\nInvalid input. You have to use (Y) for yes or (N) for no.")
                         else:
                             print("\nUser not found.\n")
+
                     elif choice == "3":
                         password = input("Write your password: ")
 
@@ -172,21 +176,23 @@ def menu():
                             print("\nUser not found.\n")
                     elif choice == "4":
                         break
+                    
             elif choice == "4":
                 print("\nHave a good day!\n")
                 current_user = None
                 is_admin = False
                 continue
+
             elif choice == "5":
                 while True:
                     print("\n   ADM OPTIONS   ")
                     print("-----------------")
                     print("1- Add Restaurant")
                     print("2- Remove restaurant from the app")
-                    print("2- Add a dish")
-                    print("3- Remove dish from the app")
-                    print("4- Statistics")
-                    print("5- Go back to the main page")
+                    print("3- Add a dish")
+                    print("4- Remove dish from the app")
+                    print("5- Statistics")
+                    print("6- Go back to the main page")
 
                     choice = input("Enter your choice here: ")  
 
@@ -202,18 +208,66 @@ def menu():
                         print("\nRestaurant added succesfully!")  
 
                     elif choice == "2":     
-                        id = input("Enter the restaurant ID number: ").strip()
+                        restaurant_id = input("Enter the restaurant ID number to remove it: ").strip()
 
-                        confirm = input("Are you sure you want to change the password of your account? (Y/N): ").strip().lower()
+                        if not database.restaurant_exists(connection, restaurant_id):
+                            print("\nID number does not exist.")
+                            continue
+
+                        confirm = input("Are you sure you want to remove the restaurant? (Y/N): ").strip().lower()
 
                         if confirm == "n":
                             print("\nCancelled.")
                             continue
                         elif confirm == "y":
-                            database.delete_restaurant(connection, id)
+                            database.delete_restaurant(connection, restaurant_id)
                             print("\nRestaurant removed successfully!")
                         else:
                             print("\nInvalid input. You have to use (Y) for yes or (N) for no.")   
+
+                    elif choice == "3":
+                        restaurants = database.get_menu(connection)
+
+                        print("\nRestaurants IDs")
+                        for restaurant in restaurants:
+                            print(f'ID:{restaurant[0]} | Restaurant name:{restaurant[1]}\n')
+
+                        try:
+                            restaurant_id = int(input("Write the ID number of the restaurant: "))
+                            dish_name = input("Write the item name: ")
+                            type = input("Write the type: ")
+                            price = float(input("Write the price: "))
+                        except:
+                            print("\nInvalid input(s).")
+                            continue
+
+                        if not restaurant_id or not dish_name or not type or not price:
+                            print("\nYou have to fill all the fields.\n")
+                            continue        
+
+                        if database.restaurant_exists(connection, restaurant_id):
+                            database.add_dish(connection, restaurant_id, dish_name, type, price)    
+                            print(f'\n{dish_name} added!')    
+                        else:
+                            print("\nRestaurant ID does not exist. Use a valid ID.")
+
+                    elif choice == "4":
+                        dish_id = input("Enter the dish ID number to remove it: ").strip()
+
+                        if not database.dish_exists(connection, dish_id):
+                            print("\nID number does not exist.")
+                            continue
+
+                        confirm = input("Are you sure you want to remove it? (Y/N): ").strip().lower()
+
+                        if confirm == "n":
+                            print("\nCancelled.")
+                            continue
+                        elif confirm == "y":
+                            database.delete_dish(connection, dish_id)
+                            print("\nDish removed successfully!")
+                        else:
+                            print("\nInvalid input. You have to use (Y) for yes or (N) for no.")       
             else:
                 print("\nInvalid choice, Pick a valid number.")
 
