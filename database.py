@@ -164,18 +164,18 @@ def add_to_the_cart(connection, user_id, dish_id, quantity):
         dish = connection.execute("SELECT dish_name FROM dishes WHERE dish_id=?", (dish_id,)).fetchone()
 
         if not dish:
-            return("dish_not_found",)
+            return "dish_not_found"
         
-        dish_name = dish
+        dish_name = dish[0]
 
-    existing = connection.execute("SELECT quantity FROM cart where user_id=? AND dish_id=?", (user_id, dish_id)).fetchone()
+        existing = connection.execute("SELECT quantity FROM cart where user_id=? AND dish_id=?", (user_id, dish_id)).fetchone()
 
-    if existing:
-        connection.execute("""
-                        UPDATE cart SET quantity = quantity + ? WHERE user_id=? AND dish_id=?""", (quantity, user_id, dish_id))
-    else:
-        connection.execute("""
-                    INSERT INTO cart(user_id, dish_id, quantity) VALUES(?, ?, ?)""", (user_id, dish_id, quantity))
+        if existing:
+            connection.execute("""
+                            UPDATE cart SET quantity = quantity + ? WHERE user_id=? AND dish_id=?""", (quantity, user_id, dish_id))
+        else:
+            connection.execute("""
+                            INSERT INTO cart(user_id, dish_id, quantity) VALUES(?, ?, ?)""", (user_id, dish_id, quantity))
         
     return dish_name
         

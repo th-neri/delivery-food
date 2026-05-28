@@ -53,7 +53,7 @@ def menu():
                 print("\nHave a good day!\n")
                 break
             else:
-                print("\nInvalid choice. Pick a valid number.")
+                print("\nInvalid number.")
 
         else:
             print("\n     OPTIONS   ")
@@ -93,7 +93,7 @@ def menu():
                         type = dish[2]
                         price = dish[3]
 
-                        print(f'ID NUMBER: {dish_id} | NAME: {name} | TYPE: {type} | ${price}')
+                        print(f'ID NUMBER: {dish_id} | NAME: {name} | TYPE: {type} | ${price:.2f}')
 
             elif choice == "2":
                 while True:
@@ -123,18 +123,18 @@ def menu():
                             print(f'{restaurant_name}')
                             print("-" * len(restaurant_name))
 
-                        dishes = database.get_dish_by_restaurant(connection, restaurant_id)
+                            dishes = database.get_dish_by_restaurant(connection, restaurant_id)
 
-                        if not dishes:
-                            print("\nNo dishes available.")
+                            if not dishes:
+                                print("\nNo items available.")
                         
-                        for dish in dishes:
-                            dish_id = dish[0]
-                            name = dish[1]
-                            type = dish[2]
-                            price = dish[3]
+                            for dish in dishes:
+                                dish_id = dish[0]
+                                name = dish[1]
+                                type = dish[2]
+                                price = dish[3]
 
-                            print(f'ID NUMBER: {dish_id} | NAME: {name} | TYPE: {type} | ${price}')
+                                print(f'ID NUMBER: {dish_id} | NAME: {name} | TYPE: {type} | ${price:.2f}')
 
                         try:
                             dish_id = int(input("\nEnter the ID number of your choice: "))
@@ -146,8 +146,58 @@ def menu():
                             print("\nInvalid input.")
                             continue
 
-                        database.add_to_the_cart(connection, current_user, dish_id, quantity)
-                        print(f'{dish_name} added to the cart!')
+                        dish_name = database.add_to_the_cart(connection, current_user, dish_id, quantity)
+                        print(f'\n{dish_name} added to the cart!')
+
+                    elif choice == "2":
+
+                        cart = database.get_cart(connection, current_user)
+
+                        total = 0
+
+                        if not cart:
+                            print("\nNo items added to the cart.")
+                            continue
+
+                        for item in cart:
+                            subtotal = item[2] * item[3]
+                            total += subtotal
+                            ("\n---Your Cart---")
+                            print(f'ID NUMBER: {item[0]} | NAME: {item[1]} | PRICE: ${item[2]:.2f} | QUANTITY: {item[3]} | SUBTOTAL: ${subtotal:.2f}')
+                            print("-" * 100)
+                        
+                        print(f'TOTAL: ${total:.2f}')
+
+                    elif choice == "3":
+                        ("\n---Remove item from your cart---")
+
+                        cart = database.get_cart(connection, current_user)
+
+                        if not cart:
+                            print("\nNo items added to the cart.")
+                            continue
+
+                        for item in cart:
+                            print(f'ID NUMBER: {item[0]} | NAME: {item[1]} | PRICE: {item[2]} | QUANTITY: {item[3]}')
+
+                        try:
+                            dish_id = int(input("\nEnter the ID of the item you want to remove: ").strip())
+
+                            if not database.dish_exists(connection, dish_id):
+                                print("\nID number does not exist.")
+                                continue
+                        except ValueError:
+                            print("\nInvalid input.")
+                            continue
+
+                        database.delete_dish_from_cart(connection, current_user, dish_id)
+                        print("\nItem removed from the cart!")  
+                    elif choice == "4":
+                        pass
+                    elif choice == "5":
+                        break    
+                    else:
+                        print("\nInvalid number.")    
             elif choice == "3":
                 while True:
                     print("\n     SETTINGS   ")
@@ -241,6 +291,8 @@ def menu():
 
                     elif choice == "4":
                         break
+                    else:
+                        print("\nInvalid number.")
                     
             elif choice == "4":
                 print("\nHave a good day!\n")
@@ -280,7 +332,7 @@ def menu():
                         restaurant_id = input("Enter the restaurant ID number to remove it: ").strip()
 
                         if not database.restaurant_exists(connection, restaurant_id):
-                            print("\nID number does not exist.")
+                            print("\nID number does not exist or invalid input.")
                             continue
 
                         confirm = input("Are you sure you want to remove the restaurant? (Y/N): ").strip().lower()
@@ -324,11 +376,11 @@ def menu():
 
                     elif choice == "4":
                         print("\n---Remove dish---")
-
+                    
                         dish_id = input("Enter the dish ID number to remove it: ").strip()
 
                         if not database.dish_exists(connection, dish_id):
-                            print("\nID number does not exist.")
+                            print("\nID number does not exist or invalid input.")
                             continue
 
                         confirm = input("Are you sure you want to remove it? (Y/N): ").strip().lower()
@@ -345,7 +397,9 @@ def menu():
                         pass
                     elif choice == "6":   
                         break
+                    else:
+                        print("\nInvalid number.")
             else:
-                print("\nInvalid choice, Pick a valid number.")
+                print("\nInvalid number.")
 
 menu()
