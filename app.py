@@ -7,8 +7,6 @@ def menu():
     current_user = None
     is_admin = False
 
-    database.make_admin(connection, "neri123@gmail.com")
-
     while True:
         if current_user is None:
             print("\n     OPTIONS   ")
@@ -146,8 +144,12 @@ def menu():
                             print("\nInvalid input.")
                             continue
 
-                        dish_name = database.add_to_the_cart(connection, current_user, dish_id, quantity)
-                        print(f'\n{dish_name} added to the cart!')
+                        result = dish_name = database.add_to_the_cart(connection, current_user, dish_id, quantity)
+                        
+                        if result == "different_restaurant":
+                            print("\nYou can only order from only one restaurant at time.")
+                        else:
+                            print(f'\n{dish_name} added to the cart!')
 
                     elif choice == "2":
 
@@ -193,7 +195,14 @@ def menu():
                         database.delete_dish_from_cart(connection, current_user, dish_id)
                         print("\nItem removed from the cart!")  
                     elif choice == "4":
-                        pass
+                        print("\n---Check-out cart---")
+
+                        result = database.checkout(connection, current_user)
+
+                        if result == "empty_cart":
+                            print("\nYour cart is currently empty.")
+                        else:
+                            print("\nPurchase completed!")
                     elif choice == "5":
                         break    
                     else:

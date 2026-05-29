@@ -41,7 +41,7 @@ def create_tables(connection):
                 CREATE TABLE IF NOT EXISTS cart(
                         user_id INTEGER,
                         dish_id INTEGER,
-                        quantity INTEGER, 
+                        quantity INTEGER NOT NULL, 
                         PRIMARY KEY(user_id, dish_id),
                         FOREIGN KEY(user_id) REFERENCES users(user_id),
                         FOREIGN KEY(dish_id) REFERENCES dishes(dish_id)
@@ -51,9 +51,9 @@ def create_tables(connection):
         connection.execute("""
                 CREATE TABLE IF NOT EXISTS orders(
                         order_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        user_id INTEGER,
-                        restaurant_id INTEGER,
-                        total REAL,
+                        user_id INTEGER NOT NULL,
+                        restaurant_id INTEGER NOT NULL,
+                        total REAL NOT NULL,
                         FOREIGN KEY(user_id) REFERENCES users(user_id),
                         FOREIGN KEY(restaurant_id) REFERENCES restaurants(restaurant_id)
                     )
@@ -61,10 +61,12 @@ def create_tables(connection):
         
         connection.execute("""
                 CREATE TABLE IF NOT EXISTS order_items(
-                        order_id INTEGER,
-                        dish_id INTEGER,
-                        quantity INTEGER,
-                        price REAL,
+                        order_id INTEGER NOT NULL,
+                        dish_id INTEGER NOT NULL,
+                        dish_name TEXT NOT NULL,
+                        quantity INTEGER NOT NULL,
+                        price REAL NOT NULL,
+                        PRIMARY KEY(order_id, dish_id),
                         FOREIGN KEY(order_id) REFERENCES orders(order_id),
                         FOREIGN KEY(dish_id) REFERENCES dishes(dish_id)
                     )
@@ -161,12 +163,27 @@ def dish_exists(connection, dish_id):
 #-----CART FUNCTIONS-----
 def add_to_the_cart(connection, user_id, dish_id, quantity):
     with connection:
-        dish = connection.execute("SELECT dish_name FROM dishes WHERE dish_id=?", (dish_id,)).fetchone()
+        dish = connection.execute("SELECT dish_name, restaurant_id FROM dishes WHERE dish_id=?", (dish_id,)).fetchone()
 
         if not dish:
             return "dish_not_found"
         
-        dish_name = dish[0]
+        dish_name, restaurant_id = dish
+
+        existing_restaurant = connection.execute("""
+                                                SELECT
+                                                dishes.restaurant_id
+                                                FROM cart
+                                                JOIN dishes ON cart.dish_id = dishes.dish_id
+                                                WHERE cart.user_id=?
+                                                LIMIT 1""", (user_id,)
+                                                ).fetchone()
+        
+        if existing_restaurant:
+            cart_restaurant_id = existing_restaurant[0]
+
+            if cart_restaurant_id != restaurant_id:
+                return "different_restaurant"
 
         existing = connection.execute("SELECT quantity FROM cart where user_id=? AND dish_id=?", (user_id, dish_id)).fetchone()
 
@@ -186,12 +203,48 @@ def get_cart(connection, user_id):
                                   dishes.dish_id,
                                   dishes.dish_name,
                                   dishes.price,
+                                  dishes.restaurant_id,
                                   cart.quantity
-                                  FROM cart JOIN dishes ON cart.dish_id = dishes.dish_id
+                                  FROM cart 
+                                  JOIN dishes ON cart.dish_id = dishes.dish_id
                                   WHERE cart.user_id=?""", (user_id,)
                                 ).fetchall()
         
 def delete_dish_from_cart(connection, user_id, dish_id):
     with connection:
         connection.execute("DELETE FROM cart WHERE user_id=? AND dish_id=?", (user_id, dish_id))
-    
+
+def checkout(connection, user_id):
+    with connection:
+        cart_items = connection.execute("""
+                                        SELECT
+                                        dishes.dish_id,
+                                        dishes.dish_name,
+                                        dishes.price,
+                                        cart.quantity,
+                                        dishes.restaurant_id
+                                        FROM cart 
+                                        JOIN dishes ON cart.dish_id = dishes.dish_id
+                                        WHERE cart.user_id=?""", (user_id,)
+                                        ).fetchall()
+        if not cart_items:
+            return "empty_cart"
+        
+        total = 0
+
+        for item in cart_items:
+            dish_id, name, price, quantity, restaurant_id = item
+
+            total += price * quantity
+
+        cursor = connection.execute("INSERT INTO orders(user_id, restaurant_id, total) VALUES(?, ?, ?)", (user_id, restaurant_id, total))
+
+        order_id = cursor.lastrowid
+
+        for item in cart_items:
+            dish_id, name, price, quantity, restaurant_id = item
+
+        connection.execute("INSERT INTO order_items(order_id, dish_id, dish_name, quantity, price) VALUES(?, ?, ?, ?, ?)", (order_id, dish_id, name, quantity, price))
+
+        connection.execute("DELETE FROM cart WHERE user_id=?", (user_id,))
+
